@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>Galicia Pay</title>
+<title>Pasos Pay</title>
 <style>
 :root {
   --primary: #FF5F00;
@@ -18,6 +18,14 @@
   --radius-sm: 12px;
   --shadow: 0 2px 10px rgba(0,0,0,0.06);
 }
+
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+<script>
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
 
 * { box-sizing: border-box; }
 
@@ -2292,7 +2300,7 @@ button:active { opacity: 0.75; }
         <div class="comprobante-outer">
           <div class="comprobante-bank-banner">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="4" x2="12" y2="20"/><line x1="6" y1="9" x2="18" y2="9"/></svg>
-            <span class="comprobante-bank-name">Banco Galicia</span>
+            <span class="comprobante-bank-name">Passos</span>
           </div>
           <div class="comprobante-inner">
             <div class="comprobante-summary-card">
@@ -2305,7 +2313,7 @@ button:active { opacity: 0.75; }
               <p class="comprobante-name" id="comprobanteDeNombre"></p>
               <p class="comprobante-row">CUIT <span id="comprobanteDeCuit"></span></p>
               <p class="comprobante-row">CA $ N° <span id="comprobanteDeAlias"></span></p>
-              <p class="comprobante-row">Cuenta en <strong>Banco Galicia</strong></p>
+              <p class="comprobante-row">Cuenta en <strong>Banco Passos</strong></p>
 
               <p class="comprobante-section-label" style="margin-top:16px;">Para:</p>
               <p class="comprobante-name" id="comprobanteParaNombre"></p>
@@ -2370,7 +2378,7 @@ button:active { opacity: 0.75; }
             <h3>Seguridad</h3>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-9.6 9.6"/><path d="M15.5 7.5l3 3L22 7l-3-3"/></svg>
           </div>
-          <button class="mas-row" data-noop><span>Token Galicia</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+          <button class="mas-row" data-noop><span>Token Passos</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
           <button class="mas-row" data-noop><span>Claves</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
 
@@ -4096,7 +4104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.font = '700 26px Arial, sans-serif';
-    ctx.fillText('Galicia', PAD + 42, bannerH / 2 + 2);
+    ctx.fillText('Passos', PAD + 42, bannerH / 2 + 2);
 
     let y = bannerH + gap1;
     ctx.fillStyle = '#fff';
@@ -4164,7 +4172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     nameLine(deNombre);
     row('CUIT ' + deCuit);
     row('CA $ N° ' + deAlias);
-    rowBold('Cuenta en ', 'Banco Galicia');
+    rowBold('Cuenta en ', 'Banco Passos');
     ty += 14;
     label('Para:');
     nameLine(paraNombre);
