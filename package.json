@@ -1,0 +1,13 @@
+{
+  "name": "pasos-pay",
+  "version": "0.1.0",
+  "description": "App mobile: contador de pasos + medio de pago (frontend primero, backend despues)",
+  "scripts": {
+    "start": "npx serve . -l 8080"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
+  }
+}
