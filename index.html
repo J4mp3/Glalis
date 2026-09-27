@@ -6,7 +6,7 @@
 <title>Pasos Pay</title>
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="manifest" href="manifest.json?v=2">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ffffff">
 <script>
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
@@ -823,6 +823,16 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 .modinput-menu-item-accent { background: #FFEDE0; color: var(--primary-dark); }
 .modinput-menu-item-accent svg { color: var(--primary); }
 
+.transf-edit-lista { display: flex; flex-direction: column; gap: 14px; }
+.transf-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.transf-edit-head .modinput-card-title { margin-bottom: 12px; }
+.transf-edit-borrar { color: #E63946; font-weight: 700; font-size: 13px; padding: 4px 0 12px; }
+.transf-edit-vacio { text-align: center; color: var(--text-soft); font-size: 13px; margin: 24px 12px; line-height: 1.5; }
+.modinput-borrar {
+  width: 100%; background: transparent; color: #E63946; border: 1.5px solid #E63946;
+  border-radius: 14px; padding: 13px; font-weight: 700; font-size: 13.5px;
+}
+
 .placeholder-screen {
   min-height: 100vh;
   display: flex;
@@ -913,6 +923,14 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 }
 .tarj-card-dark { background: linear-gradient(90deg, #171b30 0%, #2c1a1c 28%, #8a2c0d 58%, #ff6a0f 100%); }
 .tarj-card-gray { background: linear-gradient(150deg, #6b6b70 0%, #a5715a 55%, #e8944f 100%); }
+
+.tarj-input-wrap { position: relative; }
+.tarj-input-wrap .field-input { padding-right: 76px; }
+.tarj-input-logo {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  height: 26px; width: auto; max-width: 64px; object-fit: contain;
+  background: #16161A; border-radius: 6px; padding: 4px 6px; display: none;
+}
 
 .tarj-card-logo {
   position: absolute;
@@ -1859,7 +1877,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="tarj-slide">
             <div class="tarj-card-shadow">
               <div class="tarj-card tarj-card-dark">
-                <img class="tarj-card-logo" src="ico/visadeb.png" alt="">
+                <img class="tarj-card-logo" id="tarjDebitoLogo" src="ico/visadeb.png" alt="">
                 <button class="tarj-toggle">
                   <span class="tarj-toggle-text">Mostrar datos</span>
                   <span class="tarj-eye"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -1882,7 +1900,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="tarj-slide">
             <div class="tarj-card-shadow">
               <div class="tarj-card tarj-card-gray">
-                <img class="tarj-card-logo" src="ico/visa.png" alt="">
+                <img class="tarj-card-logo" id="tarjCreditoLogo" src="ico/visa.png" alt="">
                 <button class="tarj-toggle">
                   <span class="tarj-toggle-text">Mostrar datos</span>
                   <span class="tarj-eye"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -2688,6 +2706,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           Movimientos recientes
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
+	     <button class="modinput-menu-item" id="modinputGoTransferencias">
+    	    Transferencias
+    	    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+     	 </button>
         <button class="modinput-menu-item" id="modinputGoCuentas">
           Mis cuentas
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -2815,7 +2837,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <label class="field-label" for="inputDebitoVenc">Fecha de vencimiento</label>
           <input class="field-input" id="inputDebitoVenc" type="text" inputmode="numeric" maxlength="5" placeholder="11/22">
           <label class="field-label" for="inputDebitoCvv">Código de seguridad</label>
-          <input class="field-input" id="inputDebitoCvv" type="text" inputmode="numeric" maxlength="3" placeholder="123">
+          <input class="field-input" id="inputDebitoCvv" type="text" inputmode="numeric" maxlength="4" placeholder="123">
           <label class="field-label" for="inputDebitoLimiteCompra">Límite de compra</label>
           <input class="field-input" id="inputDebitoLimiteCompra" type="text" placeholder="$2.500.000">
           <label class="field-label" for="inputDebitoLimiteDisponible">Límite disponible</label>
@@ -2828,7 +2850,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <label class="field-label" for="inputCreditoVenc">Fecha de vencimiento</label>
           <input class="field-input" id="inputCreditoVenc" type="text" inputmode="numeric" maxlength="5" placeholder="11/22">
           <label class="field-label" for="inputCreditoCvv">Código de seguridad</label>
-          <input class="field-input" id="inputCreditoCvv" type="text" inputmode="numeric" maxlength="3" placeholder="123">
+          <input class="field-input" id="inputCreditoCvv" type="text" inputmode="numeric" maxlength="4" placeholder="123">
           <label class="field-label" for="inputCreditoLimiteCompra">Límite de compra</label>
           <input class="field-input" id="inputCreditoLimiteCompra" type="text" placeholder="$2.500.000">
           <label class="field-label" for="inputCreditoLimiteDisponible">Límite disponible</label>
@@ -2932,6 +2954,22 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       <div class="modinput-footer">
         <button class="modinput-cancel" id="modinputMovimientosCancel">Cancelar</button>
         <button class="modinput-save" id="modinputMovimientosSave">Guardar</button>
+      </div>
+    </div>
+
+    <div class="modinput-screen" id="modinputTransferencias">
+      <div class="modinput-header">
+        <button class="modinput-back" id="modinputTransferenciasBack" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <h2>Transferencias</h2>
+      </div>
+      <div class="modinput-body">
+        <button class="modinput-randomize" id="modinputTransfRandomizarBtn" type="button">Randomizar transferencias</button>
+        <div id="modinputTransfLista" class="transf-edit-lista"></div>
+        <button class="modinput-borrar" id="modinputTransfBorrarBtn" type="button">Borrar todas</button>
+      </div>
+      <div class="modinput-footer">
+        <button class="modinput-cancel" id="modinputTransferenciasCancel">Cancelar</button>
+        <button class="modinput-save" id="modinputTransferenciasSave">Guardar</button>
       </div>
     </div>
 
@@ -3254,10 +3292,33 @@ document.addEventListener('DOMContentLoaded', () => {
       el.dataset.masked = maskedValue;
       el.textContent = wasShown ? realValue : maskedValue;
     }
+        // Detecta la marca por los primeros dígitos del número
+    function marcaTarjeta(numero) {
+      const n = String(numero || '').replace(/\D/g, '');
+      if (/^3[47]/.test(n)) return 'amex';
+      if (/^5[1-5]/.test(n) || /^2(2[2-9]|[3-6]\d|7[01]|720)/.test(n)) return 'mastercard';
+      if (/^4/.test(n)) return 'visa';
+      return null;
+    }
+    const LOGOS_TARJETA = {
+      visa:       { debito: 'ico/visadeb.png',       credito: 'ico/visa.png' },
+      mastercard: { debito: 'ico/mastercarddeb.png', credito: 'ico/mastercard.png' },
+      amex:       { debito: 'ico/amex.png',          credito: 'ico/amex.png' }
+    };
     [['debito', 'tarjDebito'], ['credito', 'tarjCredito']].forEach(([key, prefix]) => {
       const t = appData.tarjetas[key];
       const last4 = t.numero.replace(/\s/g, '').slice(-4) || '4444';
-      updateTarjEl(document.getElementById(prefix + 'Numero'), t.numero, '**** **** **** ' + last4);
+      const marca = marcaTarjeta(t.numero);
+      const logo = document.getElementById(prefix + 'Logo');
+      if (logo) {
+        if (!logo.dataset.default) logo.dataset.default = logo.getAttribute('src');
+        const src = marca ? LOGOS_TARJETA[marca][key] : logo.dataset.default;
+        logo.onerror = () => { logo.onerror = null; logo.src = logo.dataset.default; };
+        logo.src = src;
+        logo.alt = marca ? marca.charAt(0).toUpperCase() + marca.slice(1) : '';
+      }
+      const mascara = marca === 'amex' ? '**** ****** *' + last4 : '**** **** **** ' + last4;
+      updateTarjEl(document.getElementById(prefix + 'Numero'), t.numero, mascara);
       updateTarjEl(document.getElementById(prefix + 'Venc'), t.vencimiento, '**/**');
       updateTarjEl(document.getElementById(prefix + 'Cvv'), t.cvv, '***');
     });
@@ -3307,6 +3368,149 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   renderData();
+
+  // ===== Editar información > Transferencias =====
+  (function () {
+    const menu = document.getElementById('modinputMenu');
+    const pantalla = document.getElementById('modinputTransferencias');
+    const lista = document.getElementById('modinputTransfLista');
+    const irBtn = document.getElementById('modinputGoTransferencias');
+    if (!menu || !pantalla || !lista || !irBtn) return;
+
+    const pad = n => String(n).padStart(2, '0');
+    const azar = arr => arr[Math.floor(Math.random() * arr.length)];
+    const digitos = n => Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join('');
+    const miles = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const bump = btn => btn.animate([{ transform: 'scale(1)' }, { transform: 'scale(0.96)' }, { transform: 'scale(1)' }], { duration: 140 });
+    const nombres = ['Lucía Fernández', 'Martín Gómez', 'Sofía Romero', 'Tomás Díaz', 'Valentina Ruiz', 'Joaquín Castro', 'Franco Miguez', 'Dan Pelea', 'Ian Rapper', 'Luciana Hamburguesa', 'Andrea Tarro',
+                     'Camila Sosa', 'Nicolás Herrera', 'Florencia Medina', 'Agustín Morales', 'Julieta Suárez', 'Facundo Ríos'];
+    const entidades = ['Banco Macro', 'Banco Galicia', 'Banco ICBC', 'MercadoPago', 'UALA', 'Brubank', 'PayPal', 'Banco BBVA'];
+    const motivos = ['Varios', 'Alquiler', 'Cuotas', 'Expensas', 'Honorarios', 'Préstamo'];
+
+    // Fecha y hora de una transferencia, para ordenarlas de la más nueva a la más vieja
+    function momento(t) {
+      const m = String(t.fechaHora || t.fecha || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\D+(\d{1,2}):(\d{2}))?/);
+      return m ? new Date(+m[3], m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)).getTime() : 0;
+    }
+    const ordenar = arr => arr.sort((a, b) => momento(b) - momento(a));
+
+    function generar(cantidad) {
+      const nombrePropio = ((appData.personal.nombre || 'Nombre') + ' ' + (appData.personal.apellido || 'Apellido')).trim();
+      const mezcla = nombres.slice().sort(() => Math.random() - 0.5);
+      let cursor = new Date();
+      const nuevas = [];
+      for (let i = 0; i < cantidad; i++) {
+        cursor = new Date(cursor.getTime() - (1 + Math.floor(Math.random() * 5)) * 86400000);
+        cursor.setHours(8 + Math.floor(Math.random() * 13), Math.floor(Math.random() * 60));
+        const fecha = pad(cursor.getDate()) + '/' + pad(cursor.getMonth() + 1) + '/' + cursor.getFullYear();
+        const op = String(Math.floor(10000000000 + Math.random() * 89999999999));
+        nuevas.push({
+          id: op,
+          ejemplo: true,
+          monto: '$' + miles(Math.round((1000 + Math.random() * 149000) / 500) * 500),
+          fecha: fecha,
+          fechaHora: fecha + ' · ' + pad(cursor.getHours()) + ':' + pad(cursor.getMinutes()) + ' h',
+          deNombre: nombrePropio,
+          deCuit: formatCuit(appData.personal.cuit),
+          deAlias: appData.aliasPesos,
+          paraNombre: mezcla[i % mezcla.length],
+          paraCuit: formatCuit(azar(['20', '23', '27']) + digitos(9)),
+          paraCbu: digitos(22),
+          paraEntidad: azar(entidades),
+          concepto: azar(motivos),
+          operacion: op
+        });
+      }
+      return nuevas;
+    }
+
+    let borrador = [];
+
+    function pintar() {
+      if (!borrador.length) {
+        lista.innerHTML = '<p class="transf-edit-vacio">No hay transferencias. Tocá "Randomizar transferencias" o hacé una desde la app.</p>';
+        return;
+      }
+      lista.innerHTML = borrador.map((t, i) =>
+        '<div class="modinput-card">' +
+          '<div class="transf-edit-head">' +
+            '<p class="modinput-card-title">Transferencia ' + (i + 1) + '</p>' +
+            '<button class="transf-edit-borrar" type="button" data-borrar="' + i + '">Eliminar</button>' +
+          '</div>' +
+          '<input class="field-input" type="text" data-i="' + i + '" data-campo="paraNombre" placeholder="Destinatario">' +
+          '<div class="field-row">' +
+            '<input class="field-input" type="text" data-i="' + i + '" data-campo="fecha" inputmode="numeric" maxlength="10" placeholder="Fecha">' +
+            '<input class="field-input" type="text" data-i="' + i + '" data-campo="monto" placeholder="Monto">' +
+          '</div>' +
+        '</div>'
+      ).join('');
+      lista.querySelectorAll('input[data-i]').forEach(inp => {
+        inp.value = borrador[+inp.dataset.i][inp.dataset.campo] || '';
+        inp.addEventListener('input', () => { borrador[+inp.dataset.i][inp.dataset.campo] = inp.value; });
+      });
+      lista.querySelectorAll('[data-borrar]').forEach(b => {
+        b.addEventListener('click', () => { borrador.splice(+b.dataset.borrar, 1); pintar(); });
+      });
+    }
+
+    function volverAlMenu() {
+      pantalla.classList.remove('open');
+      menu.classList.add('open');
+    }
+
+    irBtn.addEventListener('click', () => {
+      borrador = (appData.transferenciasApp || []).map(t => Object.assign({}, t));
+      pintar();
+      menu.classList.remove('open');
+      pantalla.classList.add('open');
+      const body = pantalla.querySelector('.modinput-body');
+      if (body) body.scrollTop = 0;
+    });
+
+    const back = document.getElementById('modinputTransferenciasBack');
+    const cancel = document.getElementById('modinputTransferenciasCancel');
+    const save = document.getElementById('modinputTransferenciasSave');
+    const randomBtn = document.getElementById('modinputTransfRandomizarBtn');
+    const borrarBtn = document.getElementById('modinputTransfBorrarBtn');
+    if (back) back.addEventListener('click', volverAlMenu);
+    if (cancel) cancel.addEventListener('click', volverAlMenu);
+
+    // Randomizar: cambia solo las de ejemplo y conserva las que hiciste desde la app
+    if (randomBtn) randomBtn.addEventListener('click', () => {
+      const hechasEnLaApp = borrador.filter(t => !t.ejemplo);
+      borrador = ordenar(hechasEnLaApp.concat(generar(6)));
+      pintar();
+      bump(randomBtn);
+    });
+
+    // Borrar todas: pide un segundo toque para confirmar
+    let armado = false, timer = null;
+    const TEXTO_BORRAR = 'Borrar todas';
+    if (borrarBtn) borrarBtn.addEventListener('click', () => {
+      if (!armado) {
+        armado = true;
+        borrarBtn.textContent = 'Tocá de nuevo para confirmar';
+        timer = setTimeout(() => { armado = false; borrarBtn.textContent = TEXTO_BORRAR; }, 2500);
+        return;
+      }
+      clearTimeout(timer);
+      armado = false;
+      borrarBtn.textContent = TEXTO_BORRAR;
+      borrador = [];
+      pintar();
+    });
+
+    if (save) save.addEventListener('click', () => {
+      borrador.forEach(t => {
+        const hora = (String(t.fechaHora || '').split('·')[1] || '12:00 h').trim();
+        t.fechaHora = (t.fecha || '').trim() + ' · ' + hora;
+      });
+      appData.transferenciasApp = ordenar(borrador.slice());
+      saveData(appData);
+      renderData();
+      volverAlMenu();
+    });
+  })();
 
   const masLastLogin = document.getElementById('masLastLogin');
   if (masLastLogin) {
@@ -4660,6 +4864,46 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+// ===== Logo de la marca en vivo en "Editar información > Tarjetas" =====
+(function () {
+  function marcaTarjeta(numero) {
+    const n = String(numero || '').replace(/\D/g, '');
+    if (/^3[47]/.test(n)) return 'amex';
+    if (/^5[1-5]/.test(n) || /^2(2[2-9]|[3-6]\d|7[01]|720)/.test(n)) return 'mastercard';
+    if (/^4/.test(n)) return 'visa';
+    return null;
+  }
+  const LOGOS = {
+    visa:       { debito: 'ico/visadeb.png',       credito: 'ico/visa.png' },
+    mastercard: { debito: 'ico/mastercarddeb.png', credito: 'ico/mastercard.png' },
+    amex:       { debito: 'ico/amex.png',          credito: 'ico/amex.png' }
+  };
+  const pantalla = document.getElementById('modinputTarjetas');
+  [['inputDebitoNumero', 'debito'], ['inputCreditoNumero', 'credito']].forEach(([id, tipo]) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'tarj-input-wrap';
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    const img = document.createElement('img');
+    img.className = 'tarj-input-logo';
+    img.alt = '';
+    img.onerror = () => { img.dataset.fallo = img.getAttribute('src'); img.style.display = 'none'; };
+    wrap.appendChild(img);
+    function actualizar() {
+      const m = marcaTarjeta(input.value);
+      const src = m ? LOGOS[m][tipo] : null;
+      if (!src || img.dataset.fallo === src) { img.style.display = 'none'; return; }
+      if (img.getAttribute('src') !== src) img.src = src;
+      img.alt = m.charAt(0).toUpperCase() + m.slice(1);
+      img.style.display = 'block';
+    }
+    input.addEventListener('input', actualizar);
+    if (pantalla) new MutationObserver(actualizar).observe(pantalla, { attributes: true, attributeFilter: ['class'] });
+    actualizar();
+  });
+})();
 </script>
 </body>
 </html>
