@@ -1671,7 +1671,8 @@ button.tarj-cuotas-card { display: block; width: 100%; text-align: left; font: i
 .fp-text { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--text-soft); }
 .fp-err { margin: 10px 0 0; min-height: 18px; font-size: 12.5px; font-weight: 600; color: #E63946; }
 .fp-usepin { margin-top: 6px; padding: 12px 20px; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--primary); }
-.fp-sensor { width: 88px; height: 88px; margin-top: 28px; flex-shrink: 0; }
+.fp-sensor { width: 88px; height: 88px; margin-top: 28px; flex-shrink: 0; touch-action: none; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.fp-sensor.holding { transform: scale(0.92); box-shadow: 0 0 0 12px rgba(255,255,255,0.35); transition: transform 0.65s linear, box-shadow 0.65s linear; }
 .fp-sensor svg { width: 48px; height: 48px; }
 @media (max-height: 700px) {
   .pin-top { padding-top: 40px; }
@@ -3971,7 +3972,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         if (await qrDetect(video)) {
           qrPaused = true;
-          try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+          try { if (navigator.vibrate) navigator.vibrate([80, 40, 120]); } catch (e) {}
           qrDialog(true);
         }
       } catch (e) {}
@@ -5672,7 +5673,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function closePrompt() { prompt.classList.remove('open'); }
   usePin.addEventListener('click', closePrompt);
-  sensor.addEventListener('click', () => {
+
+  // vibraciones
+  const VIB_OK  = [90, 40, 180];
+  const VIB_ERR = [120, 60, 120];
+
+  // --- botón de huella: hay que mantenerlo apretado ---
+  const HOLD_MS = 650;
+  let holdT = null;
+
+  function verificarHuella() {
     if (fpClosing) return;
     if (huellaOn()) {
       fpClosing = true;
@@ -5682,11 +5692,12 @@ document.addEventListener('DOMContentLoaded', () => {
         screen.classList.remove('scanning');
         screen.classList.add('ok');
         fpTitle.textContent = '¡Listo!';
-        vibrar(40);
+        vibrar(VIB_OK);
         setTimeout(unlock, 500);
-      }, 800);
+      }, 500);
       return;
     }
+    vibrar(VIB_ERR);
     fpFails++;
     fpErr.textContent = 'No se detecta la huella. Intentá de nuevo.';
     shake(card);
@@ -5700,7 +5711,29 @@ document.addEventListener('DOMContentLoaded', () => {
         msg.textContent = 'No se pudo verificar tu huella. Ingresá tu clave.';
       }, 900);
     }
-  });
+  }
+
+  function startHold(e) {
+    if (fpClosing || holdT) return;
+    e.preventDefault();
+    sensor.classList.add('holding');
+    vibrar(20);
+    holdT = setTimeout(() => {
+      holdT = null;
+      sensor.classList.remove('holding');
+      verificarHuella();
+    }, HOLD_MS);
+  }
+  function cancelHold() {
+    if (!holdT) return;
+    clearTimeout(holdT);
+    holdT = null;
+    sensor.classList.remove('holding');
+    vibrar(0);
+  }
+  sensor.addEventListener('pointerdown', startHold);
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => sensor.addEventListener(ev, cancelHold));
+  sensor.addEventListener('contextmenu', e => e.preventDefault());
   pad.addEventListener('click', e => {
     const k = e.target.closest('[data-k]');
     if (!k || busy) return;
@@ -5714,7 +5747,7 @@ document.addEventListener('DOMContentLoaded', () => {
       busy = true;
       setTimeout(() => {
         if (buf === PIN) {
-          vibrar(40);
+          vibrar(VIB_OK);
           setTimeout(unlock, 150);
         } else {
           msg.textContent = 'Clave incorrecta. Intentá de nuevo.';
