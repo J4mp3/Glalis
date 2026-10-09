@@ -3,13 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-<title>Pasos Pay</title>
-<link rel="icon" href="favicon.ico" sizes="any">
+<title>Banco Galicia</title>
+<link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#FF5F00">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Banco Galicia">
 <script>
-  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+  // El service worker solo se usa como PWA en navegador. Dentro de la app (Capacitor) los archivos ya son locales.
+  if ("serviceWorker" in navigator && !window.Capacitor && /^https?:$/.test(location.protocol)) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 </script>
 <style>
 :root {
@@ -1519,10 +1528,203 @@ input, select, textarea { max-width: 100%; min-width: 0; }
   margin-top: -6px;
 }
 .sheet-close.confirm-delete { color: #E63946; }
+
+/* ===== No seleccionable (solo campos de texto) ===== */
+* { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
+img { -webkit-user-drag: none; }
+
+/* ===== Pantalla de ingreso (huella) ===== */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  max-width: 430px;
+  margin: 0 auto;
+  z-index: 99;
+  background: linear-gradient(160deg, #FF7A1A 0%, var(--primary) 55%, var(--primary-dark) 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  clip-path: circle(150% at 50% 88%);
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+.login-screen.hide { visibility: hidden; pointer-events: none; }
+.login-screen.fadein { animation: fpIn 0.35s ease; }
+/* Transición de desbloqueo: el naranja se cierra hacia el sensor y el inicio se asienta */
+.login-screen .login-mode, .login-screen .login-demo, .login-screen .hero-blob { transition: opacity 0.3s ease, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.login-screen.unlocking { animation: loginReveal 0.62s cubic-bezier(0.65, 0, 0.35, 1) 0.12s forwards; pointer-events: none; }
+.login-screen.unlocking .login-mode, .login-screen.unlocking .login-demo { opacity: 0; transform: scale(0.96); }
+@keyframes loginReveal { from { clip-path: circle(150% at 50% 88%); } to { clip-path: circle(0% at 50% 88%); } }
+html.entering .screen.active { animation: homeIn 0.75s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes homeIn { from { opacity: 0.4; } to { opacity: 1; } }
+.login-hero {
+  position: relative;
+  padding: 64px 24px 44px;
+  text-align: center;
+  color: #fff;
+  flex: 0 0 auto;
+}
+.login-screen::after {
+  content: ''; position: absolute; bottom: -90px; left: -90px; width: 260px; height: 260px;
+  background: var(--primary-blob); opacity: 0.55; pointer-events: none;
+  border-radius: 44% 56% 60% 40% / 50% 45% 55% 50%;
+}
+.login-logo {
+  position: relative; z-index: 1; display: block;
+  width: 54px; height: 54px; margin: 0 auto 22px;
+  border-radius: 50%; background: #fff; overflow: hidden;
+  box-shadow: 0 0 0 6px rgba(255,255,255,0.25);
+}
+.login-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.login-title { position: relative; z-index: 1; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.2px; }
+.login-sub { position: relative; z-index: 1; margin: 8px 0 0; font-size: 13.5px; font-weight: 500; opacity: 0.92; }
+.login-body {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  padding: 0 24px 56px;
+}
+.login-finger {
+  position: relative;
+  width: 112px; height: 112px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: #fff;
+  box-shadow: 0 10px 26px rgba(0,0,0,0.22);
+  transition: transform 0.15s ease;
+}
+.login-finger:active { transform: scale(0.95); opacity: 1; }
+.login-finger svg { stroke: var(--primary); width: 60px; height: 60px; position: relative; z-index: 2; transition: opacity 0.25s ease, transform 0.25s ease; }
+.login-finger .ico-check { position: absolute; opacity: 0; transform: scale(0.6); }
+.login-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid #fff;
+  opacity: 0;
+  animation: loginPulse 2.4s ease-out infinite;
+}
+.login-ring-2 { animation-delay: 1.2s; }
+@keyframes loginPulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+.login-body > *, .login-hero > * { animation: loginIn 0.5s ease 1.7s both; }
+@keyframes loginIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.login-hero .hero-blob { animation: none; }
+.login-screen.ok .login-ring { animation: none; opacity: 0; }
+.login-screen.ok .ico-finger { opacity: 0; transform: scale(0.6); }
+.login-screen.ok .ico-check { opacity: 1; transform: scale(1); }
+.login-screen.scanning .ico-finger { animation: loginScan 0.5s ease-in-out infinite alternate; }
+@keyframes loginScan { from { opacity: 1; } to { opacity: 0.45; } }
+
+/* ===== Movimientos de tarjeta: detalle + Mis cuotas ===== */
+#tarjMovs .acc-mov, #tarjMovsDetail .acc-mov { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#tarjMovs .acc-mov:active, #tarjMovsDetail .acc-mov:active { opacity: 0.6; }
+.sheet-backdrop.top { z-index: 60; }
+.bottom-sheet.top { z-index: 61; }
+button.tarj-cuotas-card { display: block; width: 100%; text-align: left; font: inherit; color: inherit; }
+.tarj-cuotas-head { display: flex; align-items: center; justify-content: space-between; }
+.tarj-cuotas-head h3 { margin: 0; }
+.tarj-cuotas-head svg { width: 18px; height: 18px; color: var(--text-soft); }
+.tarj-cuotas-sub { margin: 6px 0 0; font-size: 12px; color: var(--text-soft); }
+.cuotas-box { background: var(--white); border-radius: 16px; padding: 4px 14px; margin-bottom: 12px; box-shadow: var(--shadow); }
+.cuotas-box .tarj-info-row:first-child { border-top: none; }
+.cuotas-label { font-size: 13px; font-weight: 700; margin: 16px 2px 8px; }
+.cuota-item { background: var(--white); border-radius: 16px; padding: 12px 14px; margin-bottom: 10px; box-shadow: var(--shadow); }
+.cuota-item-top { display: flex; justify-content: space-between; gap: 10px; }
+.cuota-item-top .mov-desc { font-size: 13.5px; }
+.cuota-bar { height: 5px; border-radius: 3px; background: #EFEDEA; margin: 10px 0 2px; overflow: hidden; }
+.cuota-bar span { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #FF7A1A, var(--primary)); }
+.cuotas-empty { text-align: center; font-size: 12.5px; color: var(--text-soft); padding: 18px 0; margin: 0; }
+
+/* ===== Ingreso: modos huella / clave ===== */
+.login-mode { flex: 1; display: none; flex-direction: column; min-height: 0; position: relative; z-index: 1; }
+.login-screen[data-mode="finger"] .login-mode-finger,
+.login-screen[data-mode="pin"] .login-mode-pin { display: flex; }
+.login-blob-top { top: -150px; right: -110px; }
+.login-mode-pin { position: static; z-index: auto; }
+.pin-logout { position: absolute; top: 16px; right: 20px; z-index: 2; color: #fff; font-size: 13px; font-weight: 600; padding: 6px 4px; letter-spacing: 0.2px; }
+.pin-top { padding: 62px 24px 0; text-align: center; color: #fff; }
+.pin-top .login-logo { margin-bottom: 16px; }
+.pin-title { margin: 0; font-size: 21px; font-weight: 700; }
+.pin-msg { margin: 8px 0 0; min-height: 18px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.92); }
+.pin-dots { display: flex; justify-content: center; gap: 20px; margin-top: 22px; }
+.pin-dots i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); transition: background 0.12s ease, transform 0.12s ease; }
+.pin-dots i.on { background: #fff; border-color: #fff; transform: scale(1.1); }
+.pin-dots.shake { animation: pinShake 0.4s ease; }
+@keyframes pinShake { 20% { transform: translateX(-10px); } 40% { transform: translateX(10px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+.pin-forgot { margin-top: 34px; background: rgba(255,255,255,0.2); color: #fff; font-size: 13px; font-weight: 600; padding: 9px 22px; border-radius: 20px; }
+.pin-pad { margin-top: auto; display: grid; grid-template-columns: repeat(3, 76px); justify-content: center; gap: 6px 36px; padding-bottom: 52px; }
+.pin-key { width: 76px; height: 64px; border-radius: 20px; color: #fff; font-size: 28px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: background 0.1s ease; }
+.pin-key:active { background: rgba(255,255,255,0.25); opacity: 1; }
+.pin-key svg { width: 28px; height: 28px; stroke: #fff; }
+.pin-key.disabled { opacity: 0.3; pointer-events: none; }
+.login-mode-pin > .pin-top > *, .login-mode-pin > .pin-pad, .login-mode-pin > .pin-logout { animation: loginIn 0.5s ease 1.7s both; }
+.fp-prompt { position: absolute; inset: 0; z-index: 5; display: none; flex-direction: column; align-items: center; justify-content: flex-end; padding: 0 22px 56px; background: rgba(0,0,0,0.5); }
+.fp-prompt.open { display: flex; animation: fpIn 0.25s ease; }
+@keyframes fpIn { from { opacity: 0; } to { opacity: 1; } }
+.fp-card { width: 100%; background: #fff; border-radius: 22px; padding: 18px 20px 12px; text-align: center; color: var(--text); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+.fp-card.shake { animation: pinShake 0.4s ease; }
+.fp-brand { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-soft); }
+.fp-brand-dot { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: block; }
+.fp-brand-dot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fp-title { margin: 14px 0 0; font-size: 18px; font-weight: 700; }
+.fp-text { margin: 8px 0 0; font-size: 13px; line-height: 1.4; color: var(--text-soft); }
+.fp-err { margin: 10px 0 0; min-height: 18px; font-size: 12.5px; font-weight: 600; color: #E63946; }
+.fp-usepin { margin-top: 6px; padding: 12px 20px; font-size: 13px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--primary); }
+.fp-sensor { width: 88px; height: 88px; margin-top: 28px; flex-shrink: 0; }
+.fp-sensor svg { width: 48px; height: 48px; }
+@media (max-height: 700px) {
+  .pin-top { padding-top: 40px; }
+  .pin-forgot { margin-top: 20px; }
+  .pin-key { height: 54px; font-size: 25px; }
+  .pin-pad { padding-bottom: 36px; gap: 2px 32px; }
+}
+/* Interruptor (pantalla Seguridad) */
+.seg-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.seg-hint { margin: 4px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-soft); }
+.seg-switch { position: relative; width: 52px; height: 30px; border-radius: 15px; background: #D8D6D3; flex-shrink: 0; transition: background 0.2s ease; }
+.seg-switch span { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); transition: transform 0.2s ease; }
+.seg-switch.on { background: var(--primary); }
+.seg-switch.on span { transform: translateX(22px); }
+
+/* ===== QR: cámara con marco ===== */
+.qr-screen { position: fixed; inset: 0; max-width: 430px; margin: 0 auto; z-index: 30; background: #0d0d0f; overflow: hidden; }
+.qr-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s ease; }
+.qr-screen.qr-live .qr-video { opacity: 1; }
+.qr-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.qr-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px 0; position: relative; z-index: 2; }
+.qr-top h2 { margin: 0; color: #fff; font-size: 17px; font-weight: 700; }
+.qr-close, .qr-top-side { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.qr-close { background: rgba(0,0,0,0.35); }
+.qr-close svg { width: 20px; height: 20px; }
+.qr-frame-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-bottom: 60px; }
+.qr-frame { position: relative; width: 250px; height: 250px; border-radius: 26px; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.58); }
+.qr-c { position: absolute; width: 46px; height: 46px; border: 4px solid #fff; }
+.qr-c-tl { top: -3px; left: -3px; border-right: none; border-bottom: none; border-top-left-radius: 26px; }
+.qr-c-tr { top: -3px; right: -3px; border-left: none; border-bottom: none; border-top-right-radius: 26px; }
+.qr-c-bl { bottom: -3px; left: -3px; border-right: none; border-top: none; border-bottom-left-radius: 26px; }
+.qr-c-br { bottom: -3px; right: -3px; border-left: none; border-top: none; border-bottom-right-radius: 26px; }
+.qr-scanline { position: absolute; left: 14px; right: 14px; top: 14px; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--primary), transparent); box-shadow: 0 0 12px rgba(255,95,0,0.9); animation: qrScan 2.4s ease-in-out infinite alternate; }
+@keyframes qrScan { from { transform: translateY(0); } to { transform: translateY(218px); } }
+.qr-hint { position: relative; z-index: 1; margin: 26px 24px 0; color: #fff; font-size: 14px; font-weight: 600; text-align: center; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+.qr-error-box { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 0 36px; text-align: center; color: #fff; background: linear-gradient(160deg, #FF7A1A 0%, var(--primary) 55%, var(--primary-dark) 100%); z-index: 1; }
+.qr-error-box svg { width: 44px; height: 44px; margin-bottom: 14px; }
+.qr-error-title { margin: 0; font-size: 18px; font-weight: 700; }
+.qr-error-text { margin: 8px 0 0; font-size: 13px; line-height: 1.45; opacity: 0.92; }
+.qr-retry { margin-top: 22px; background: #fff; color: var(--primary); font-size: 14px; font-weight: 700; padding: 12px 30px; border-radius: 24px; }
+.qr-screen.qr-error .qr-error-box { display: flex; }
+.qr-screen.qr-error .qr-frame, .qr-screen.qr-error .qr-hint { visibility: hidden; }
+.qr-screen.qr-error .qr-top { z-index: 3; }
+.qr-dialog-backdrop { position: absolute; inset: 0; z-index: 4; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); }
+.qr-dialog-backdrop.open { display: flex; animation: fpIn 0.2s ease; }
+.qr-dialog { width: calc(100% - 64px); max-width: 320px; background: #fff; border-radius: 20px; overflow: hidden; text-align: center; box-shadow: 0 12px 34px rgba(0,0,0,0.3); }
+.qr-dialog-title { margin: 0; padding: 24px 20px 0; font-size: 19px; font-weight: 700; color: var(--text); }
+.qr-dialog-text { margin: 8px 0 0; padding: 0 20px 22px; font-size: 14px; color: var(--text-soft); }
+.qr-dialog-btn { display: block; width: 100%; height: 52px; border-top: 1px solid #ECEAE7; font-size: 15px; font-weight: 600; color: var(--text-soft); }
+.qr-dialog-btn-primary { color: var(--primary); font-weight: 700; }
 </style>
 
 </head>
-<body>
 
 <div class="phone-frame">
 
@@ -1534,6 +1736,57 @@ input, select, textarea { max-width: 100%; min-width: 0; }
     <span class="splash-dot"><img src="icon-192.png" alt=""></span>
   </div>
 
+  <div class="login-screen" id="loginScreen" data-mode="pin">
+    <div class="hero-blob login-blob-top"></div>
+
+    <!-- Modo clave: pin de 6 dígitos -->
+    <div class="login-mode login-mode-pin">
+      <button class="pin-logout" type="button" data-noop>Cerrar sesión</button>
+      <div class="pin-top">
+        <span class="login-logo"><img src="icon-192.png" alt=""></span>
+        <h1 class="pin-title">Ingresá tu clave</h1>
+        <p class="pin-msg" id="pinMsg"></p>
+        <div class="pin-dots" id="pinDots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <button class="pin-forgot" type="button" data-noop>¿Olvidaste tu clave?</button>
+      </div>
+      <div class="pin-pad" id="pinPad">
+        <button class="pin-key" type="button" data-k="1">1</button><button class="pin-key" type="button" data-k="2">2</button><button class="pin-key" type="button" data-k="3">3</button><button class="pin-key" type="button" data-k="4">4</button><button class="pin-key" type="button" data-k="5">5</button><button class="pin-key" type="button" data-k="6">6</button><button class="pin-key" type="button" data-k="7">7</button><button class="pin-key" type="button" data-k="8">8</button><button class="pin-key" type="button" data-k="9">9</button>
+        <button class="pin-key pin-key-icon" type="button" data-k="fp" id="pinFpKey" aria-label="Usar huella digital">
+          <svg viewBox="0 0 64 64" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M27 50V34a5 5 0 0 1 10 0v6"/><path d="M21 52V34a11 11 0 0 1 22 0v8"/><path d="M15 48V34a17 17 0 0 1 34 0v4"/><path d="M9 42V34a23 23 0 0 1 46 0v1"/><path d="M32 34v10a6 6 0 0 0 4 5.5"/><path d="M27 56c-3-2-6-6-6-10"/></svg>
+        </button>
+        <button class="pin-key" type="button" data-k="0">0</button>
+        <button class="pin-key pin-key-icon" type="button" data-k="del" aria-label="Borrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-7 7 7 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><line x1="12" y1="9" x2="18" y2="15"/><line x1="18" y1="9" x2="12" y2="15"/></svg>
+        </button>
+      </div>
+
+      <div class="fp-prompt" id="fpPrompt">
+        <div class="fp-card" id="fpCard">
+          <div class="fp-brand"><span class="fp-brand-dot"><img src="icon-192.png" alt=""></span><span>Banco Galicia</span></div>
+          <p class="fp-title" id="fpTitle">Entrá con tu huella</p>
+          <p class="fp-text">Por favor, poné tu huella digital en el escáner para verificar tu identidad</p>
+          <p class="fp-err" id="fpErr"></p>
+          <button class="fp-usepin" id="fpUsePin" type="button">Usar mi clave</button>
+        </div>
+        <button class="login-finger fp-sensor" id="fpSensorBtn" type="button" aria-label="Escanear huella">
+          <span class="login-ring"></span>
+          <span class="login-ring login-ring-2"></span>
+          <svg class="ico-finger" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M27 50V34a5 5 0 0 1 10 0v6"/>
+            <path d="M21 52V34a11 11 0 0 1 22 0v8"/>
+            <path d="M15 48V34a17 17 0 0 1 34 0v4"/>
+            <path d="M9 42V34a23 23 0 0 1 46 0v1"/>
+            <path d="M32 34v10a6 6 0 0 0 4 5.5"/>
+            <path d="M27 56c-3-2-6-6-6-10"/>
+          </svg>
+          <svg class="ico-check" viewBox="0 0 64 64" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 33l11 11 21-23"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <p class="login-demo"> </p>
+  </div>
+
   <div class="app" id="app">
 
     <section class="screen active" id="screen-inicio">
@@ -1541,6 +1794,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
         <header class="hero">
           <div class="hero-blob"></div>
+          <p class="hero-demo"> </p>
 
           <div class="hero-topbar">
             <button class="icon-btn avatar" data-noop aria-label="Perfil">
@@ -1662,21 +1916,21 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <button class="card card-usd-big" id="usdRotatingCard" data-noop>
               <span class="card-usd-text" id="usdRotatingText">Hoy también<br>podés<br>comprar USD</span>
               <span class="card-usd-blob"></span>
-              <span class="card-usd-img"><img id="usdRotatingImg" src="img/compr-usd.jpg" alt=""></span>
+              <span class="card-usd-img"><img id="usdRotatingImg" src="img/compr-usd.jpg" alt="" loading="lazy" decoding="async"></span>
             </button>
             <button class="card card-small card-agregar" data-noop>
-              <span class="ico-badge"><img src="ico/agregar-retirar.png" alt=""></span>
+              <span class="ico-badge"><img src="ico/agregar-retirar.png" alt="" loading="lazy" decoding="async"></span>
               <span class="card-label">Agregar / Retirar</span>
             </button>
           </div>
 
           <div class="accesos-bottom">
             <button class="card card-small" data-noop>
-              <span class="ico-badge"><img src="ico/compven-usd.png" alt=""></span>
+              <span class="ico-badge"><img src="ico/compven-usd.png" alt="" loading="lazy" decoding="async"></span>
               <span class="card-label">Comprar/<br>Vender</span>
             </button>
             <button class="card card-small" data-noop>
-              <span class="ico-badge"><img src="ico/gen-token.png" alt=""></span>
+              <span class="ico-badge"><img src="ico/gen-token.png" alt="" loading="lazy" decoding="async"></span>
               <span class="card-label">Generar<br>Token</span>
             </button>
             <button class="card card-small" data-tab="qr">
@@ -1687,7 +1941,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
           <div class="promo-banner">
             <button class="promo-close" data-noop aria-label="Cerrar">✕</button>
-            <div class="promo-img"><img src="img/promo.jpg" alt=""></div>
+            <div class="promo-img"><img src="img/promo.jpg" alt="" loading="lazy" decoding="async"></div>
             <div class="promo-text">
               <p class="promo-title">Pagá todos tus<br>servicios.</p>
               <p class="promo-sub">Resolvé en un toque.</p>
@@ -1701,13 +1955,13 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
           <div class="beneficios-row">
             <button class="benef-card" data-noop>
-              <div class="benef-img"><img src="img/benef-viajes.jpg" alt=""></div>
+              <div class="benef-img"><img src="img/benef-viajes.jpg" alt="" loading="lazy" decoding="async"></div>
               <p class="benef-title">Sección Tus Viajes</p>
               <p class="benef-desc">Todo lo que necesitás en un sólo lugar.</p>
               <span class="benef-link">Conocer más</span>
             </button>
             <button class="benef-card" data-noop>
-              <div class="benef-img"><img src="img/benef-show.jpg" alt=""></div>
+              <div class="benef-img"><img src="img/benef-show.jpg" alt="" loading="lazy" decoding="async"></div>
               <p class="benef-title">Todo para tu show</p>
               <p class="benef-desc">Beneficios exclusivos en recitales</p>
               <span class="benef-link">Conocer más</span>
@@ -1721,15 +1975,15 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
           <div class="servicios-row">
             <button class="serv-btn" data-noop>
-              <span class="ico ico-line"><img src="ico/rec-celular.png" alt=""></span>
+              <span class="ico ico-line"><img src="ico/rec-celular.png" alt="" loading="lazy" decoding="async"></span>
               <span class="serv-label">Recargar<br>celular</span>
             </button>
             <button class="serv-btn" data-noop>
-              <span class="ico ico-line"><img src="ico/rec-transp.png" alt=""></span>
+              <span class="ico ico-line"><img src="ico/rec-transp.png" alt="" loading="lazy" decoding="async"></span>
               <span class="serv-label">Recargar<br>transporte</span>
             </button>
             <button class="serv-btn" data-noop>
-              <span class="ico ico-line"><img src="ico/pag-arca.png" alt=""></span>
+              <span class="ico ico-line"><img src="ico/pag-arca.png" alt="" loading="lazy" decoding="async"></span>
               <span class="serv-label">Pagar<br>ARCA</span>
             </button>
           </div>
@@ -1745,11 +1999,11 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
           <div class="reco-row">
             <button class="reco-card" data-noop>
-              <div class="reco-img"><img src="img/reco-seguro.jpg" alt=""></div>
+              <div class="reco-img"><img src="img/reco-seguro.jpg" alt="" loading="lazy" decoding="async"></div>
               <p class="reco-title">Tu Seguro de Hogar con Disney+ incluido</p>
             </button>
             <button class="reco-card" data-noop>
-              <div class="reco-img"><img src="img/reco-celu.jpg" alt=""></div>
+              <div class="reco-img"><img src="img/reco-celu.jpg" alt="" loading="lazy" decoding="async"></div>
               <p class="reco-title">¿Todavía no asegurás celu? Conocé más</p>
             </button>
           </div>
@@ -1877,7 +2131,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="tarj-slide">
             <div class="tarj-card-shadow">
               <div class="tarj-card tarj-card-dark">
-                <img class="tarj-card-logo" id="tarjDebitoLogo" src="ico/visadeb.png" alt="">
+                <img class="tarj-card-logo" id="tarjDebitoLogo" src="ico/visadeb.png" alt="" loading="lazy" decoding="async">
                 <button class="tarj-toggle">
                   <span class="tarj-toggle-text">Mostrar datos</span>
                   <span class="tarj-eye"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -1900,7 +2154,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="tarj-slide">
             <div class="tarj-card-shadow">
               <div class="tarj-card tarj-card-gray">
-                <img class="tarj-card-logo" id="tarjCreditoLogo" src="ico/visa.png" alt="">
+                <img class="tarj-card-logo" id="tarjCreditoLogo" src="ico/visa.png" alt="" loading="lazy" decoding="async">
                 <button class="tarj-toggle">
                   <span class="tarj-toggle-text">Mostrar datos</span>
                   <span class="tarj-eye"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>
@@ -2001,6 +2255,14 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <span id="tarjInfoLimiteDisponible">$2.500.000</span>
           </div>
         </div>
+
+        <button class="tarj-info-card tarj-cuotas-card" id="tarjCuotasBtn" type="button">
+          <div class="tarj-cuotas-head">
+            <h3>Mis cuotas</h3>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+          <p class="tarj-cuotas-sub" id="tarjCuotasSub"></p>
+        </button>
       </div>
     </section>
 
@@ -2033,11 +2295,60 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       </div>
     </div>
 
+
+    <div class="sheet-backdrop top" id="movDetalleBackdrop"></div>
+    <div class="bottom-sheet top" id="movDetalleSheet">
+      <div class="sheet-handle" id="movDetalleHandle"><span></span></div>
+      <div class="sheet-title-row">
+        <h2>Detalle del movimiento</h2>
+        <button class="sheet-close" id="movDetalleClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="sheet-body" id="movDetalleBody" style="padding-bottom:28px;"></div>
+    </div>
+
+    <div class="sheet-backdrop top" id="cuotasBackdrop"></div>
+    <div class="bottom-sheet top" id="cuotasSheet">
+      <div class="sheet-handle" id="cuotasHandle"><span></span></div>
+      <div class="sheet-title-row">
+        <h2>Mis cuotas</h2>
+        <button class="sheet-close" id="cuotasClose" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="sheet-body" id="cuotasBody" style="padding-bottom:28px;"></div>
+    </div>
+
     <section class="screen" id="screen-qr">
-      <div class="placeholder-screen placeholder-qr">
-        <div class="placeholder-icon">▦</div>
-        <h2>Pagar / Cobrar con QR</h2>
-        <p>Acá va a ir el flujo de pago con QR (generar / escanear). Todavía sin lógica — solo maqueta cuando me pases el diseño.</p>
+      <div class="qr-screen" id="qrScreen">
+        <video class="qr-video" id="qrVideo" autoplay muted playsinline></video>
+        <div class="qr-overlay">
+          <div class="qr-top">
+            <button class="qr-close" id="qrClose" type="button" aria-label="Cerrar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+            </button>
+            <h2>Pagar con QR</h2>
+            <span class="qr-top-side"></span>
+          </div>
+          <div class="qr-frame-wrap">
+            <div class="qr-frame">
+              <i class="qr-c qr-c-tl"></i><i class="qr-c qr-c-tr"></i><i class="qr-c qr-c-bl"></i><i class="qr-c qr-c-br"></i>
+              <span class="qr-scanline"></span>
+            </div>
+            <p class="qr-hint">Alineá el código QR dentro del marco</p>
+          </div>
+        </div>
+        <div class="qr-dialog-backdrop" id="qrDialog">
+          <div class="qr-dialog" role="alertdialog" aria-labelledby="qrDialogTitle">
+            <p class="qr-dialog-title" id="qrDialogTitle">Error</p>
+            <p class="qr-dialog-text">No se pudo leer el QR</p>
+            <button class="qr-dialog-btn qr-dialog-btn-primary" id="qrDialogRetry" type="button">Reintentar</button>
+            <button class="qr-dialog-btn" id="qrDialogCancel" type="button">Cancelar</button>
+          </div>
+        </div>
+        <div class="qr-error-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+          <p class="qr-error-title">No pudimos usar la cámara</p>
+          <p class="qr-error-text" id="qrErrorText"></p>
+          <button class="qr-retry" id="qrRetry" type="button">Reintentar</button>
+        </div>
       </div>
     </section>
 
@@ -2058,7 +2369,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <span class="tarj-act-label">A un Alias,<br>CBU o CVU</span>
           </button>
           <button class="tarj-act" data-noop>
-            <span class="tarj-act-circle"><img src="ico/transf-modo.png" alt="" style="width:22px;height:22px;"></span>
+            <span class="tarj-act-circle"><img src="ico/transf-modo.png" alt="" style="width:22px;height:22px;" loading="lazy" decoding="async"></span>
             <span class="tarj-act-label">A un<br>celular</span>
           </button>
           <button class="tarj-act" data-noop>
@@ -2473,7 +2784,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
         <div class="sheet-grid" style="margin-top:16px;">
           <button class="sheet-item" data-noop>
             <span class="sheet-ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/><path d="M21 12h-4a2 2 0 0 0 0 4h4"/></svg></span>
-            <span class="sheet-label">Mi<br>Paquete</span>
+            <span class="sheet-label" style="white-space:nowrap;">Mi paquete</span>
           </button>
           <button class="sheet-item" data-noop>
             <span class="sheet-ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 13l-2 8 5-3 5 3-2-8"/></svg></span>
@@ -2525,15 +2836,15 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
         <div class="sheet-grid">
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/agregar-retirar.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/agregar-retirar.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Agregar /<br>Retirar</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/compven-usd.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/compven-usd.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Comprar/<br>Vender</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/gen-token.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/gen-token.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Generar<br>Token</span>
           </button>
           <button class="sheet-item" id="comboContacto" data-noop>
@@ -2546,80 +2857,80 @@ input, select, textarea { max-width: 100%; min-width: 0; }
 
         <div class="sheet-grid">
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico sheet-ico-modo"><img src="ico/act-modo.png" alt=""></span>
+            <span class="sheet-ico sheet-ico-modo"><img src="ico/act-modo.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Actividad<br>MODO</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/beneficios.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/beneficios.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Beneficios</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/blanquear-pin.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/blanquear-pin.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Blanquear PIN<br>Banelco</span>
           </button>
 
           <button class="sheet-item" id="comboSeguridad" data-noop>
-            <span class="sheet-ico"><img src="ico/clav-segu.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/clav-segu.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Claves y<br>seguridad</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/cobr-ext.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/cobr-ext.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Cobrar del<br>exterior</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/ext-efec.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/ext-efec.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Extraer<br>efectivo</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/inversiones.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/inversiones.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Inversiones</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/nuev-cuenta.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/nuev-cuenta.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Nueva<br>cuenta</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/oper-mep.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/oper-mep.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Operar<br>Dólar MEP</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-serv.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-serv.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>servicios</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-tarj.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-tarj.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>tarjeta</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-arca.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-arca.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>ARCA</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-auton.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-auton.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>Autónomo</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-mono.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-mono.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>Monotributo</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/pag-vep.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pag-vep.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>VEP</span>
           </button>
 
           <button class="sheet-item" data-tab="qr">
-            <span class="sheet-ico"><img src="ico/pagc-qr.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/pagc-qr.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Pagar<br>con QR</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/paq-prod.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/paq-prod.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Paquete de<br>productos</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/prestamos.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/prestamos.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Préstamos</span>
           </button>
 
@@ -2628,50 +2939,50 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <span class="sheet-label">Próximos<br>vencimientos</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico sheet-ico-claro"><img src="ico/claro.png" alt=""></span>
+            <span class="sheet-ico sheet-ico-claro"><img src="ico/claro.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>Claro</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico sheet-ico-movistar"><img src="ico/movistar.png" alt=""></span>
+            <span class="sheet-ico sheet-ico-movistar"><img src="ico/movistar.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>Movistar</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico sheet-ico-personal"><img src="ico/personal.png" alt=""></span>
+            <span class="sheet-ico sheet-ico-personal"><img src="ico/personal.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>Personal</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico sheet-ico-tuenti"><img src="ico/tuenti.png" alt=""></span>
+            <span class="sheet-ico sheet-ico-tuenti"><img src="ico/tuenti.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>Tuenti</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/rec-celular.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/rec-celular.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>celular</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/rec-telev.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/rec-telev.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>televisión</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/rec-transp.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/rec-transp.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargar<br>transporte</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/recargas.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/recargas.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Recargas</span>
           </button>
 
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/resu-cuenta.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/resu-cuenta.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Resúmenes<br>de cuenta</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/segu-tarj.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/segu-tarj.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Seguir una<br>tarjeta</span>
           </button>
           <button class="sheet-item" id="comboSeguros" data-noop>
-            <span class="sheet-ico"><img src="ico/seguridad.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/seguridad.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Seguros</span>
           </button>
 
@@ -2680,7 +2991,7 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <span class="sheet-label">Subir de<br>categoría</span>
           </button>
           <button class="sheet-item" data-noop>
-            <span class="sheet-ico"><img src="ico/transf-modo.png" alt=""></span>
+            <span class="sheet-ico"><img src="ico/transf-modo.png" alt="" loading="lazy" decoding="async"></span>
             <span class="sheet-label">Transferir<br>con MODO</span>
           </button>
         </div>
@@ -2712,6 +3023,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
      	 </button>
         <button class="modinput-menu-item" id="modinputGoCuentas">
           Mis cuentas
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <button class="modinput-menu-item" id="modinputGoSeguridad">
+          Seguridad
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
         <button class="modinput-menu-item modinput-menu-item-accent" id="modinputGoDestinatario">
@@ -2855,6 +3170,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <input class="field-input" id="inputCreditoLimiteCompra" type="text" placeholder="$2.500.000">
           <label class="field-label" for="inputCreditoLimiteDisponible">Límite disponible</label>
           <input class="field-input" id="inputCreditoLimiteDisponible" type="text" placeholder="$2.500.000">
+          <label class="field-label" for="inputCreditoCierre">Cierre de la tarjeta</label>
+          <input class="field-input" id="inputCreditoCierre" type="text" inputmode="numeric" maxlength="10" placeholder="24/07/2026">
+          <label class="field-label" for="inputCreditoVtoResumen">Vencimiento del resumen</label>
+          <input class="field-input" id="inputCreditoVtoResumen" type="text" inputmode="numeric" maxlength="10" placeholder="03/08/2026">
         </div>
       </div>
       <div class="modinput-footer">
@@ -2877,6 +3196,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <input class="field-input" id="inputFecha0" type="text" value="08/07/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto0" type="text" value="-$7.778,80" placeholder="Monto">
           </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas0" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct0" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
+          </div>
         </div>
         <div class="modinput-card">
           <p class="modinput-card-title">Movimiento 2</p>
@@ -2884,6 +3207,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="field-row">
             <input class="field-input" id="inputFecha1" type="text" value="05/07/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto1" type="text" value="-$3.250,40" placeholder="Monto">
+          </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas1" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct1" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
           </div>
         </div>
         <div class="modinput-card">
@@ -2893,6 +3220,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <input class="field-input" id="inputFecha2" type="text" value="02/07/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto2" type="text" value="-$12.430,50" placeholder="Monto">
           </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas2" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct2" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
+          </div>
         </div>
         <div class="modinput-card">
           <p class="modinput-card-title">Movimiento 4</p>
@@ -2900,6 +3231,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="field-row">
             <input class="field-input" id="inputFecha3" type="text" value="29/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto3" type="text" value="-$2.999,00" placeholder="Monto">
+          </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas3" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct3" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
           </div>
         </div>
         <div class="modinput-card">
@@ -2909,6 +3244,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <input class="field-input" id="inputFecha4" type="text" value="25/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto4" type="text" value="-$18.640,25" placeholder="Monto">
           </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas4" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct4" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
+          </div>
         </div>
         <div class="modinput-card">
           <p class="modinput-card-title">Movimiento 6</p>
@@ -2916,6 +3255,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="field-row">
             <input class="field-input" id="inputFecha5" type="text" value="21/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto5" type="text" value="-$34.200,00" placeholder="Monto">
+          </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas5" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct5" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
           </div>
         </div>
         <div class="modinput-card">
@@ -2925,6 +3268,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <input class="field-input" id="inputFecha6" type="text" value="17/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto6" type="text" value="-$6.499,00" placeholder="Monto">
           </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas6" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct6" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
+          </div>
         </div>
         <div class="modinput-card">
           <p class="modinput-card-title">Movimiento 8</p>
@@ -2932,6 +3279,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="field-row">
             <input class="field-input" id="inputFecha7" type="text" value="13/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto7" type="text" value="$52.000,00" placeholder="Monto">
+          </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas7" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct7" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
           </div>
         </div>
         <div class="modinput-card">
@@ -2941,6 +3292,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
             <input class="field-input" id="inputFecha8" type="text" value="09/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto8" type="text" value="-$2.150,60" placeholder="Monto">
           </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas8" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct8" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
+          </div>
         </div>
         <div class="modinput-card">
           <p class="modinput-card-title">Movimiento 10</p>
@@ -2948,6 +3303,10 @@ input, select, textarea { max-width: 100%; min-width: 0; }
           <div class="field-row">
             <input class="field-input" id="inputFecha9" type="text" value="05/06/2026" placeholder="Fecha">
             <input class="field-input" id="inputMonto9" type="text" value="-$8.320,15" placeholder="Monto">
+          </div>
+          <div class="field-row">
+            <input class="field-input" id="inputCuotas9" type="text" inputmode="numeric" maxlength="2" placeholder="Cant. de cuotas">
+            <input class="field-input" id="inputCuotaAct9" type="text" inputmode="numeric" maxlength="2" placeholder="Cuota actual">
           </div>
         </div>
       </div>
@@ -3113,6 +3472,25 @@ input, select, textarea { max-width: 100%; min-width: 0; }
       </div>
     </div>
 
+    <div class="modinput-screen" id="modinputSeguridad">
+      <div class="modinput-header">
+        <button class="modinput-back" id="modinputSeguridadBack" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        <h2>Seguridad</h2>
+      </div>
+      <div class="modinput-body">
+        <div class="modinput-card">
+          <div class="seg-row">
+            <div>
+              <p class="modinput-card-title" style="margin:0">Ingreso con huella</p>
+              <p class="seg-hint" id="segHuellaHint"></p>
+            </div>
+            <button class="seg-switch" id="segHuellaSwitch" type="button" role="switch" aria-checked="true" aria-label="Ingreso con huella"><span></span></button>
+          </div>
+        </div>
+        <button class="modinput-randomize" id="segProbarBtn" type="button">Probar pantalla de ingreso</button>
+      </div>
+    </div>
+
     <div class="modinput-screen" id="modinputDestinatario">
       <div class="modinput-header">
         <button class="modinput-back" id="modinputDestinatarioBack" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
@@ -3150,9 +3528,9 @@ document.addEventListener('DOMContentLoaded', () => {
     movimientos: [
       { desc: 'Pedidosya*Market', fecha: '08/07/2026', monto: '-$7.778,80' },
       { desc: 'Rappi*Envios', fecha: '05/07/2026', monto: '-$3.250,40' },
-      { desc: 'Farmacity', fecha: '02/07/2026', monto: '-$12.430,50' },
+      { desc: 'Farmacity', fecha: '02/07/2026', monto: '-$12.430,50', cuotas: 3, cuotaActual: 1 },
       { desc: 'Spotify AR', fecha: '29/06/2026', monto: '-$2.999,00' },
-      { desc: 'Carrefour Express', fecha: '25/06/2026', monto: '-$18.640,25' },
+      { desc: 'Carrefour Express', fecha: '25/06/2026', monto: '-$18.640,25', cuotas: 6, cuotaActual: 2 },
       { desc: 'YPF Autoservicio', fecha: '21/06/2026', monto: '-$34.200,00' },
       { desc: 'Netflix.com', fecha: '17/06/2026', monto: '-$6.499,00' },
       { desc: 'Transferencia recibida', fecha: '13/06/2026', monto: '$52.000,00' },
@@ -3195,7 +3573,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     tarjetas: {
       debito: { numero: '1111 2222 3333 4444', vencimiento: '11/22', cvv: '123', limiteCompra: '$2.500.000', limiteDisponible: '$2.500.000' },
-      credito: { numero: '1111 2222 3333 4444', vencimiento: '11/22', cvv: '123', limiteCompra: '$2.500.000', limiteDisponible: '$2.500.000' }
+      credito: { numero: '1111 2222 3333 4444', vencimiento: '11/22', cvv: '123', limiteCompra: '$2.500.000', limiteDisponible: '$2.500.000', cierre: '24/07/2026', vencimientoResumen: '03/08/2026' }
     },
     destinatario: {
       nombre: '',
@@ -3211,7 +3589,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (raw) {
         const parsed = JSON.parse(raw);
         return Object.assign({}, defaultData, parsed, {
-          movimientos: (parsed.movimientos && parsed.movimientos.length === 10) ? parsed.movimientos : defaultData.movimientos,
+          movimientos: (Array.isArray(parsed.movimientos) && parsed.movimientos.length === 10 && parsed.movimientos.every(m => m && typeof m === 'object')) ? parsed.movimientos : defaultData.movimientos,
           cuentaMovimientos: (parsed.cuentaMovimientos && parsed.cuentaMovimientos.length === 15) ? parsed.cuentaMovimientos : defaultData.cuentaMovimientos,
           personal: Object.assign({}, defaultData.personal, parsed.personal || {}),
           tarjetas: {
@@ -3219,7 +3597,7 @@ document.addEventListener('DOMContentLoaded', () => {
             credito: Object.assign({}, defaultData.tarjetas.credito, (parsed.tarjetas && parsed.tarjetas.credito) || {})
           },
           destinatario: Object.assign({}, defaultData.destinatario, parsed.destinatario || {}),
-          transferenciasApp: Array.isArray(parsed.transferenciasApp) ? parsed.transferenciasApp : defaultData.transferenciasApp
+          transferenciasApp: Array.isArray(parsed.transferenciasApp) ? parsed.transferenciasApp.filter(t => t && typeof t === 'object' && t.id) : defaultData.transferenciasApp
         });
       }
     } catch (e) {}
@@ -3521,14 +3899,14 @@ document.addEventListener('DOMContentLoaded', () => {
     masLastLogin.textContent = 'Último ingreso: ' + fecha + ' ' + hora;
   }
 
-  let accDropdownPesos, accDropdownBackdrop, modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario;
+  let accDropdownPesos, accDropdownBackdrop, modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario, modinputSeguridad;
 
   const screens = document.querySelectorAll('.screen');
   const navItems = document.querySelectorAll('.nav-item');
   const tabButtons = document.querySelectorAll('[data-tab]');
 
   const bottomNav = document.querySelector('.bottom-nav');
-  const NO_NAV_TABS = ['nuevatransf', 'montotransf', 'checkouttransf', 'procesando', 'exitotransf', 'comprobante'];
+  const NO_NAV_TABS = ['qr', 'nuevatransf', 'montotransf', 'checkouttransf', 'procesando', 'exitotransf', 'comprobante'];
   function formatCuit(raw) {
     const digits = String(raw || '').replace(/\D/g, '').slice(0, 11);
     let out = digits.slice(0, 2);
@@ -3543,11 +3921,130 @@ document.addEventListener('DOMContentLoaded', () => {
     return out;
   }
 
+  // ===== QR: cámara con marco (solo visual, todavía no lee ni procesa códigos) =====
+  let qrStream = null, qrStarting = false, qrReturnTab = 'inicio';
+  let qrScanTimer = null, qrBusy = false, qrPaused = false, qrDetector = null, qrNoNative = false, qrCanvas = null, qrJsQrLoading = null;
+  function qrLoadJsQR() {
+    if (window.jsQR) return Promise.resolve();
+    if (qrJsQrLoading) return qrJsQrLoading;
+    qrJsQrLoading = new Promise((ok, fail) => {
+      const sc = document.createElement('script');
+      sc.src = 'jsqr.js';
+      sc.onload = ok;
+      sc.onerror = () => { qrJsQrLoading = null; fail(new Error('jsqr')); };
+      document.head.appendChild(sc);
+    });
+    return qrJsQrLoading;
+  }
+  // Solo detecta si hay un código QR a la vista (no interpreta su contenido)
+  async function qrDetect(video) {
+    if (!qrNoNative && 'BarcodeDetector' in window) {
+      try {
+        if (!qrDetector) qrDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        const found = await qrDetector.detect(video);
+        return found.length > 0;
+      } catch (e) { qrNoNative = true; }
+    }
+    await qrLoadJsQR();
+    const w = video.videoWidth, h = video.videoHeight;
+    if (!w || !h) return false;
+    const k = Math.min(1, 480 / w);
+    const cw = Math.round(w * k), ch = Math.round(h * k);
+    if (!qrCanvas) qrCanvas = document.createElement('canvas');
+    qrCanvas.width = cw; qrCanvas.height = ch;
+    const c2 = qrCanvas.getContext('2d', { willReadFrequently: true });
+    c2.drawImage(video, 0, 0, cw, ch);
+    const img = c2.getImageData(0, 0, cw, ch);
+    return !!window.jsQR(img.data, cw, ch, { inversionAttempts: 'dontInvert' });
+  }
+  function qrDialog(open) {
+    const d = document.getElementById('qrDialog');
+    if (d) d.classList.toggle('open', !!open);
+  }
+  function startQrScan() {
+    stopQrScan();
+    const video = document.getElementById('qrVideo');
+    qrPaused = false;
+    qrScanTimer = setInterval(async () => {
+      if (qrBusy || qrPaused || !qrStream || !video || video.readyState < 2) return;
+      qrBusy = true;
+      try {
+        if (await qrDetect(video)) {
+          qrPaused = true;
+          try { if (navigator.vibrate) navigator.vibrate(60); } catch (e) {}
+          qrDialog(true);
+        }
+      } catch (e) {}
+      qrBusy = false;
+    }, 300);
+  }
+  function stopQrScan() {
+    if (qrScanTimer) { clearInterval(qrScanTimer); qrScanTimer = null; }
+    qrBusy = false;
+    qrDialog(false);
+  }
+  function qrShowError(texto) {
+    const box = document.getElementById('qrScreen');
+    const t = document.getElementById('qrErrorText');
+    if (t) t.textContent = texto;
+    if (box) { box.classList.remove('qr-live'); box.classList.add('qr-error'); }
+  }
+  async function startQrCamera() {
+    const box = document.getElementById('qrScreen');
+    const video = document.getElementById('qrVideo');
+    if (!box || !video || qrStream || qrStarting) return;
+    box.classList.remove('qr-error');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      qrShowError('Este navegador no permite usar la cámara. Probá abrir la app desde Chrome (con conexión segura).');
+      return;
+    }
+    qrStarting = true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+      if (document.body.dataset.screen !== 'qr') { stream.getTracks().forEach(t => t.stop()); qrStarting = false; return; }
+      qrStream = stream;
+      video.srcObject = stream;
+      try { await video.play(); } catch (e) {}
+      box.classList.add('qr-live');
+      startQrScan();
+    } catch (e) {
+      qrShowError(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')
+        ? 'Permitile a la app usar la cámara para escanear códigos QR y tocá Reintentar.'
+        : 'No encontramos una cámara disponible en este dispositivo.');
+    }
+    qrStarting = false;
+  }
+  function stopQrCamera() {
+    stopQrScan();
+    const box = document.getElementById('qrScreen');
+    const video = document.getElementById('qrVideo');
+    if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+    if (video) video.srcObject = null;
+    if (box) box.classList.remove('qr-live');
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopQrCamera();
+    else if (document.body.dataset.screen === 'qr') startQrCamera();
+  });
+  const qrCloseBtn = document.getElementById('qrClose');
+  if (qrCloseBtn) qrCloseBtn.addEventListener('click', () => goToTab(qrReturnTab));
+  const qrDialogRetry = document.getElementById('qrDialogRetry');
+  if (qrDialogRetry) qrDialogRetry.addEventListener('click', () => {
+    qrDialog(false);
+    setTimeout(() => { qrPaused = false; }, 1500); // margen para mover la cámara
+  });
+  const qrDialogCancel = document.getElementById('qrDialogCancel');
+  if (qrDialogCancel) qrDialogCancel.addEventListener('click', () => { qrDialog(false); goToTab(qrReturnTab); });
+  const qrRetryBtn = document.getElementById('qrRetry');
+  if (qrRetryBtn) qrRetryBtn.addEventListener('click', startQrCamera);
+
   function goToTab(tab) {
     screens.forEach(s => s.classList.toggle('active', s.id === 'screen-' + tab));
     navItems.forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
     if (bottomNav) bottomNav.style.display = NO_NAV_TABS.includes(tab) ? 'none' : 'flex';
     window.scrollTo(0, 0);
+    if (tab === 'qr') startQrCamera();
+    else { stopQrCamera(); qrReturnTab = tab; }
   }
 
   tabButtons.forEach(btn => {
@@ -3572,7 +4069,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof transfDetalleSheet !== 'undefined' && transfDetalleSheet && transfDetalleSheet.classList.contains('open')) {
         closeTransfDetalle();
       }
-      [modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario].forEach(s => {
+      [modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario, modinputSeguridad].forEach(s => {
         if (s) s.classList.remove('open');
       });
       if (accDropdownPesos) {
@@ -3731,6 +4228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const d = document.getElementById('tarjInfoLimiteDisponible');
     if (c) c.textContent = t.limiteCompra;
     if (d) d.textContent = t.limiteDisponible;
+    if (typeof refreshCuotasCard === 'function') refreshCuotasCard();
   }
 
   function setupCarousel(carouselEl, dotsEl, onChange) {
@@ -3761,6 +4259,165 @@ document.addEventListener('DOMContentLoaded', () => {
 
   setupCarousel(document.querySelector('.hero-carousel'), document.querySelector('.hero .dots'));
   setupCarousel(document.getElementById('tarjCarousel'), document.querySelector('.tarj-dots'), updateTarjInfoLimite);
+
+
+  // ===== Movimientos de tarjeta: detalle y "Mis cuotas" =====
+  function parseMonto(str) {
+    const t = String(str || '');
+    const n = parseFloat(t.replace(/[^\d,]/g, '').replace(',', '.'));
+    return { neg: t.indexOf('-') !== -1, val: isNaN(n) ? 0 : n };
+  }
+  function fmtMonto(n) {
+    const parts = (Math.round(n * 100) / 100).toFixed(2).split('.');
+    return '$' + parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
+  }
+  function cuotaInfo(m) {
+    const total = parseInt(m && m.cuotas, 10);
+    const p = parseMonto(m && m.monto);
+    if (!p.neg || !(total > 1)) return null;
+    let act = parseInt(m.cuotaActual, 10);
+    if (!(act >= 1)) act = 1;
+    if (act > total) act = total;
+    const valor = p.val / total;
+    return { total, act, pend: total - act, valor, totalCompra: p.val, restante: valor * (total - act) };
+  }
+  function mk(tag, cls, text) {
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined) el.textContent = text;
+    return el;
+  }
+  function detailField(label, value, hint) {
+    const f = mk('div', 'perfil-field');
+    f.appendChild(mk('p', 'perfil-field-label', label));
+    f.appendChild(mk('p', 'perfil-field-value', value));
+    if (hint) f.appendChild(mk('p', 'perfil-field-hint', hint));
+    return f;
+  }
+  function infoRow(label, value) {
+    const r = mk('div', 'tarj-info-row');
+    r.appendChild(mk('span', '', label));
+    r.appendChild(mk('span', '', value));
+    return r;
+  }
+  function setupSimpleSheet(sheetId, backdropId, handleId, closeId) {
+    const sh = document.getElementById(sheetId);
+    const bd = document.getElementById(backdropId);
+    const hd = document.getElementById(handleId);
+    const cl = document.getElementById(closeId);
+    if (!sh || !bd) return { open() {}, close() {} };
+    const open = () => { sh.classList.add('open'); bd.classList.add('open'); };
+    const close = () => { sh.classList.remove('open'); bd.classList.remove('open'); };
+    bd.addEventListener('click', close);
+    if (cl) cl.addEventListener('click', close);
+    if (hd) {
+      let dragging = false, startY = 0, dy = 0;
+      const py = e => e.touches ? e.touches[0].clientY : e.clientY;
+      hd.addEventListener('mousedown', e => { dragging = true; startY = py(e); dy = 0; sh.classList.add('dragging'); });
+      hd.addEventListener('touchstart', e => { dragging = true; startY = py(e); dy = 0; sh.classList.add('dragging'); }, { passive: true });
+      const move = e => { if (!dragging) return; dy = Math.max(0, py(e) - startY); sh.style.transform = 'translateX(-50%) translateY(' + dy + 'px)'; };
+      const up = () => {
+        if (!dragging) return;
+        dragging = false; sh.classList.remove('dragging'); sh.style.transform = '';
+        if (dy > 110) close();
+        dy = 0;
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('touchmove', move, { passive: true });
+      window.addEventListener('mouseup', up);
+      window.addEventListener('touchend', up);
+    }
+    return { open, close };
+  }
+  const movDetalleSheetCtl = setupSimpleSheet('movDetalleSheet', 'movDetalleBackdrop', 'movDetalleHandle', 'movDetalleClose');
+  const cuotasSheetCtl = setupSimpleSheet('cuotasSheet', 'cuotasBackdrop', 'cuotasHandle', 'cuotasClose');
+
+  function openMovDetalle(idx) {
+    const m = appData.movimientos[idx];
+    const body = document.getElementById('movDetalleBody');
+    if (!m || !body) return;
+    body.innerHTML = '';
+    const ci = cuotaInfo(m);
+    body.appendChild(detailField('Comercio', m.desc));
+    body.appendChild(detailField('Fecha', m.fecha));
+    body.appendChild(detailField(ci ? 'Monto de la compra' : 'Monto', ci ? fmtMonto(ci.totalCompra) : m.monto));
+    if (ci) {
+      body.appendChild(detailField('Cuotas', 'Cuota ' + ci.act + ' de ' + ci.total, ci.pend === 0 ? 'Cuotas canceladas' : ci.pend + (ci.pend === 1 ? ' cuota pendiente' : ' cuotas pendientes')));
+      body.appendChild(detailField('Valor de cada cuota', fmtMonto(ci.valor)));
+      body.appendChild(detailField('Saldo pendiente', fmtMonto(ci.restante)));
+    } else if (parseMonto(m.monto).neg) {
+      body.appendChild(detailField('Cuotas', 'Pago en 1 cuota', 'Sin financiación'));
+    }
+    movDetalleSheetCtl.open();
+  }
+  ['tarjMovs', 'tarjMovsDetail'].forEach(id => {
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.addEventListener('click', e => {
+      const row = e.target.closest('.acc-mov');
+      if (!row || !box.contains(row)) return;
+      const idx = Array.prototype.indexOf.call(box.querySelectorAll('.acc-mov'), row);
+      if (idx >= 0) openMovDetalle(idx);
+    });
+  });
+
+  function listaCuotas() {
+    const out = [];
+    (appData.movimientos || []).forEach(m => { const ci = cuotaInfo(m); if (ci) out.push({ m, ci }); });
+    return out;
+  }
+  function refreshCuotasCard() {
+    const sub = document.getElementById('tarjCuotasSub');
+    if (!sub) return;
+    const l = listaCuotas();
+    if (!l.length) { sub.textContent = 'Sin compras en cuotas'; return; }
+    const pend = l.reduce((a, x) => a + x.ci.pend, 0);
+    sub.textContent = l.length + (l.length === 1 ? ' compra en cuotas' : ' compras en cuotas') + ' · ' + pend + (pend === 1 ? ' cuota pendiente' : ' cuotas pendientes');
+  }
+  function openCuotas() {
+    const body = document.getElementById('cuotasBody');
+    if (!body) return;
+    body.innerHTML = '';
+    const cr = appData.tarjetas.credito;
+    const fechas = mk('div', 'cuotas-box');
+    fechas.appendChild(infoRow('Cierre de la tarjeta', cr.cierre || '-'));
+    fechas.appendChild(infoRow('Vencimiento', cr.vencimientoResumen || '-'));
+    body.appendChild(fechas);
+
+    const l = listaCuotas();
+    body.appendChild(mk('p', 'cuotas-label', 'Compras en cuotas'));
+    if (!l.length) {
+      body.appendChild(mk('p', 'cuotas-empty', 'No tenés compras en cuotas.'));
+    } else {
+      let totalPend = 0;
+      l.forEach(({ m, ci }) => {
+        totalPend += ci.restante;
+        const it = mk('div', 'cuota-item');
+        const top = mk('div', 'cuota-item-top');
+        const left = mk('div');
+        left.appendChild(mk('p', 'mov-desc', m.desc));
+        left.appendChild(mk('p', 'mov-fecha', 'Compra del ' + m.fecha));
+        top.appendChild(left);
+        top.appendChild(mk('span', 'mov-monto', fmtMonto(ci.valor)));
+        it.appendChild(top);
+        const bar = mk('div', 'cuota-bar');
+        const fill = mk('span');
+        fill.style.width = Math.round(ci.act / ci.total * 100) + '%';
+        bar.appendChild(fill);
+        it.appendChild(bar);
+        it.appendChild(infoRow('Cuota', ci.act + ' de ' + ci.total));
+        it.appendChild(infoRow('Cuotas pendientes', String(ci.pend)));
+        it.appendChild(infoRow('Saldo pendiente', fmtMonto(ci.restante)));
+        body.appendChild(it);
+      });
+      const tot = mk('div', 'cuotas-box');
+      tot.appendChild(infoRow('Total pendiente', fmtMonto(totalPend)));
+      body.appendChild(tot);
+    }
+    cuotasSheetCtl.open();
+  }
+  const tarjCuotasBtn = document.getElementById('tarjCuotasBtn');
+  if (tarjCuotasBtn) tarjCuotasBtn.addEventListener('click', openCuotas);
 
   const verifyBackdrop = document.getElementById('verifyBackdrop');
   const verifyModal = document.getElementById('verifyModal');
@@ -4473,9 +5130,10 @@ document.addEventListener('DOMContentLoaded', () => {
   modinputMovimientos = document.getElementById('modinputMovimientos');
   modinputCuentas = document.getElementById('modinputCuentas');
   modinputDestinatario = document.getElementById('modinputDestinatario');
+  modinputSeguridad = document.getElementById('modinputSeguridad');
 
   if (modinputMenu && modinputPersonal && modinputTarjetas && modinputMovimientos && modinputCuentas && modinputDestinatario) {
-    const modinputScreens = [modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario];
+    const modinputScreens = [modinputMenu, modinputPersonal, modinputTarjetas, modinputMovimientos, modinputCuentas, modinputDestinatario, modinputSeguridad].filter(Boolean);
 
     function closeAllModinput() {
       modinputScreens.forEach(s => s.classList.remove('open'));
@@ -4519,12 +5177,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('inputCreditoCvv').value = appData.tarjetas.credito.cvv;
       document.getElementById('inputCreditoLimiteCompra').value = appData.tarjetas.credito.limiteCompra;
       document.getElementById('inputCreditoLimiteDisponible').value = appData.tarjetas.credito.limiteDisponible;
+      document.getElementById('inputCreditoCierre').value = appData.tarjetas.credito.cierre || '';
+      document.getElementById('inputCreditoVtoResumen').value = appData.tarjetas.credito.vencimientoResumen || '';
     }
     function fillModinputMovimientos() {
       appData.movimientos.forEach((m, i) => {
         document.getElementById('inputDesc' + i).value = m.desc;
         document.getElementById('inputFecha' + i).value = m.fecha;
         document.getElementById('inputMonto' + i).value = m.monto;
+        const ci = cuotaInfo(m);
+        document.getElementById('inputCuotas' + i).value = ci ? ci.total : '';
+        document.getElementById('inputCuotaAct' + i).value = ci ? ci.act : '';
       });
     }
     function fillModinputCuentas() {
@@ -4573,11 +5236,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return (neg ? '-$' : '$') + formatMiles(entero) + ',' + String(cents).padStart(2, '0');
     }
     function randomizeFromTemplates(templates, count, descIdPrefix, fechaIdPrefix, montoIdPrefix, roundOnly) {
-      const pool = shuffleArr(templates);
+      // Las plantillas con 'p' (compras grandes) solo entran al azar con esa probabilidad
+      const pool = shuffleArr(templates.filter(t => t.p === undefined || Math.random() < t.p));
       const chosen = [];
       while (chosen.length < count) {
         chosen.push(pool[chosen.length % pool.length]);
       }
+      const hoy = new Date();
       let cursor = new Date();
       for (let i = 0; i < count; i++) {
         const tpl = chosen[i];
@@ -4589,6 +5254,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (descEl) descEl.value = tpl.desc;
         if (fechaEl) fechaEl.value = formatFechaDDMMYYYY(cursor);
         if (montoEl) montoEl.value = randomMonto(tpl.min, tpl.max, tpl.neg, roundOnly);
+        const cuEl = document.getElementById('inputCuotas' + i);
+        const caEl = document.getElementById('inputCuotaAct' + i);
+        if (descIdPrefix === 'inputDesc' && cuEl && caEl && montoEl) {
+          const pm = parseMonto(montoEl.value);
+          // Cuota actual según los meses transcurridos desde la compra (mismo mes = cuota 1)
+          const meses = Math.max(0, (hoy.getFullYear() - cursor.getFullYear()) * 12 + hoy.getMonth() - cursor.getMonth());
+          const act = 1 + meses;
+          const opciones = [3, 6, 12].filter(n => n > act);
+          const chance = pm.val >= 100000 ? 0.8 : 0.5;
+          if (pm.neg && pm.val >= 15000 && opciones.length && Math.random() < chance) {
+            cuEl.value = opciones[Math.floor(Math.random() * opciones.length)];
+            caEl.value = act;
+          } else { cuEl.value = ''; caEl.value = ''; }
+        }
       }
     }
 
@@ -4603,6 +5282,12 @@ document.addEventListener('DOMContentLoaded', () => {
       { desc: 'Spotify AR', min: 2999, max: 2999, neg: true },
       { desc: 'Netflix.com', min: 6499, max: 6499, neg: true },
       { desc: 'Mercado Libre', min: 8000, max: 50000, neg: true },
+      // Compras grandes (poco frecuentes)
+      { desc: 'Musimundo', min: 100000, max: 450000, neg: true, p: 0.12 },
+      { desc: 'Mercado Libre', min: 100000, max: 380000, neg: true, p: 0.12 },
+      { desc: 'Frávega', min: 120000, max: 600000, neg: true, p: 0.08 },
+      { desc: 'Despegar.com', min: 150000, max: 700000, neg: true, p: 0.06 },
+      { desc: 'Samsung Store', min: 200000, max: 900000, neg: true, p: 0.04 },
       { desc: 'Uber', min: 3000, max: 9500, neg: true },
       { desc: 'Cinemark', min: 8000, max: 19000, neg: true },
       { desc: "McDonald's", min: 6000, max: 16000, neg: true },
@@ -4659,6 +5344,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modinputMenuClose = document.getElementById('modinputMenuClose');
     if (modinputMenuClose) modinputMenuClose.addEventListener('click', closeAllModinput);
+
+
+    // ----- Seguridad: huella sí/no -----
+    const segSwitch = document.getElementById('segHuellaSwitch');
+    const segHint = document.getElementById('segHuellaHint');
+    function renderSeguridad() {
+      const on = !(window.PasosSeguridad) || window.PasosSeguridad.isHuella();
+      if (segSwitch) { segSwitch.classList.toggle('on', on); segSwitch.setAttribute('aria-checked', on ? 'true' : 'false'); }
+      if (segHint) segHint.textContent = on
+        ? 'Activada: al tocar el sensor de huella se ingresa directamente.'
+        : 'Desactivada: la huella da error y, tras 3 intentos, se obliga a ingresar la clave (112358).';
+    }
+    function fillSeguridad() { renderSeguridad(); }
+    if (segSwitch) segSwitch.addEventListener('click', () => {
+      if (!window.PasosSeguridad) return;
+      window.PasosSeguridad.setHuella(!window.PasosSeguridad.isHuella());
+      renderSeguridad();
+    });
+    const segProbarBtn = document.getElementById('segProbarBtn');
+    if (segProbarBtn) segProbarBtn.addEventListener('click', () => {
+      closeAllModinput();
+      if (window.PasosSeguridad) window.PasosSeguridad.lock();
+    });
+    const modinputGoSeguridad = document.getElementById('modinputGoSeguridad');
+    if (modinputGoSeguridad) modinputGoSeguridad.addEventListener('click', () => openModinputSection(modinputSeguridad, fillSeguridad));
+    const modinputSeguridadBack = document.getElementById('modinputSeguridadBack');
+    if (modinputSeguridadBack) modinputSeguridadBack.addEventListener('click', openModinputMenu);
 
     const modinputGoPersonal = document.getElementById('modinputGoPersonal');
     const modinputGoTarjetas = document.getElementById('modinputGoTarjetas');
@@ -4801,7 +5513,9 @@ document.addEventListener('DOMContentLoaded', () => {
             vencimiento: document.getElementById('inputCreditoVenc').value.trim() || appData.tarjetas.credito.vencimiento,
             cvv: document.getElementById('inputCreditoCvv').value.trim() || appData.tarjetas.credito.cvv,
             limiteCompra: document.getElementById('inputCreditoLimiteCompra').value.trim() || appData.tarjetas.credito.limiteCompra,
-            limiteDisponible: document.getElementById('inputCreditoLimiteDisponible').value.trim() || appData.tarjetas.credito.limiteDisponible
+            limiteDisponible: document.getElementById('inputCreditoLimiteDisponible').value.trim() || appData.tarjetas.credito.limiteDisponible,
+            cierre: document.getElementById('inputCreditoCierre').value.trim() || appData.tarjetas.credito.cierre,
+            vencimientoResumen: document.getElementById('inputCreditoVtoResumen').value.trim() || appData.tarjetas.credito.vencimientoResumen
           }
         };
         saveData(appData);
@@ -4820,6 +5534,13 @@ document.addEventListener('DOMContentLoaded', () => {
             fecha: document.getElementById('inputFecha' + i).value.trim() || appData.movimientos[i].fecha,
             monto: document.getElementById('inputMonto' + i).value.trim() || appData.movimientos[i].monto
           };
+          const nCuotas = Math.min(parseInt(document.getElementById('inputCuotas' + i).value, 10) || 0, 60);
+          if (nCuotas > 1) {
+            let act = parseInt(document.getElementById('inputCuotaAct' + i).value, 10);
+            if (!(act >= 1)) act = 1;
+            appData.movimientos[i].cuotas = nCuotas;
+            appData.movimientos[i].cuotaActual = Math.min(act, nCuotas);
+          }
         }
         saveData(appData);
         renderData();
@@ -4904,6 +5625,132 @@ document.addEventListener('DOMContentLoaded', () => {
     actualizar();
   });
 })();
+</script>
+<script>
+// ===== Ingreso: huella (solo botón) o clave de 6 dígitos. Solo UI de demostración. =====
+(function () {
+  const KEY = 'pasosPaySeguridad';
+  const PIN = '112358';
+  const root = document.documentElement;
+  const screen = document.getElementById('loginScreen');
+  if (!screen) return;
+  const $ = id => document.getElementById(id);
+  const dotsEl = $('pinDots'), msg = $('pinMsg'), pad = $('pinPad'), fpKey = $('pinFpKey');
+  const prompt = $('fpPrompt'), card = $('fpCard'), fpErr = $('fpErr'), fpTitle = $('fpTitle'), usePin = $('fpUsePin'), sensor = $('fpSensorBtn');
+
+  function huellaOn() {
+    try { const v = JSON.parse(localStorage.getItem(KEY)); if (v && typeof v.huella === 'boolean') return v.huella; } catch (e) {}
+    return true;
+  }
+  function setHuella(b) { try { localStorage.setItem(KEY, JSON.stringify({ huella: !!b })); } catch (e) {} }
+
+  let busy = false, buf = '', fpFails = 0, fpLocked = false, fpClosing = false;
+
+  let unlockTimer;
+  function vibrar(p) { try { if (navigator.vibrate) navigator.vibrate(p); } catch (e) {} }
+  function unlock() {
+    screen.classList.add('unlocking');
+    window.scrollTo(0, 0);
+    root.classList.add('entering');
+    root.classList.remove('locked');
+    clearTimeout(unlockTimer);
+    unlockTimer = setTimeout(() => {
+      screen.classList.add('hide');
+      screen.classList.remove('unlocking');
+      root.classList.remove('entering');
+    }, 800);
+  }
+  function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+  function renderDots() { Array.prototype.forEach.call(dotsEl.children, (d, i) => d.classList.toggle('on', i < buf.length)); }
+
+  // --- huella: activada = ingresa; desactivada = error y obliga clave ---
+  function openPrompt() {
+    if (fpLocked) return;
+    fpErr.textContent = '';
+    fpClosing = false;
+    prompt.classList.add('open');
+  }
+  function closePrompt() { prompt.classList.remove('open'); }
+  usePin.addEventListener('click', closePrompt);
+  sensor.addEventListener('click', () => {
+    if (fpClosing) return;
+    if (huellaOn()) {
+      fpClosing = true;
+      screen.classList.add('scanning');
+      fpTitle.textContent = 'Verificando…';
+      setTimeout(() => {
+        screen.classList.remove('scanning');
+        screen.classList.add('ok');
+        fpTitle.textContent = '¡Listo!';
+        vibrar(40);
+        setTimeout(unlock, 500);
+      }, 800);
+      return;
+    }
+    fpFails++;
+    fpErr.textContent = 'No se detecta la huella. Intentá de nuevo.';
+    shake(card);
+    if (fpFails >= 3) {
+      fpClosing = true;
+      fpErr.textContent = 'Demasiados intentos. Usá tu clave.';
+      setTimeout(() => {
+        closePrompt();
+        fpLocked = true;
+        fpKey.classList.add('disabled');
+        msg.textContent = 'No se pudo verificar tu huella. Ingresá tu clave.';
+      }, 900);
+    }
+  });
+  pad.addEventListener('click', e => {
+    const k = e.target.closest('[data-k]');
+    if (!k || busy) return;
+    const v = k.dataset.k;
+    if (v === 'fp') { openPrompt(); return; }
+    if (v === 'del') { buf = buf.slice(0, -1); renderDots(); return; }
+    if (buf.length >= 6) return;
+    buf += v;
+    renderDots();
+    if (buf.length === 6) {
+      busy = true;
+      setTimeout(() => {
+        if (buf === PIN) {
+          vibrar(40);
+          setTimeout(unlock, 150);
+        } else {
+          msg.textContent = 'Clave incorrecta. Intentá de nuevo.';
+          shake(dotsEl);
+          setTimeout(() => { buf = ''; renderDots(); busy = false; }, 400);
+        }
+      }, 150);
+    }
+  });
+
+  function show(startup) {
+    clearTimeout(unlockTimer);
+    root.classList.remove('entering');
+    screen.classList.remove('hide', 'ok', 'scanning', 'unlocking');
+    if (!startup) { screen.classList.remove('fadein'); void screen.offsetWidth; screen.classList.add('fadein'); }
+    busy = false; buf = ''; fpFails = 0; fpLocked = false; fpClosing = false;
+    fpTitle.textContent = 'Entrá con tu huella';
+    msg.textContent = '';
+    fpKey.classList.remove('disabled');
+    closePrompt();
+    renderDots();
+    root.classList.add('locked');
+    window.scrollTo(0, 0);
+    setTimeout(openPrompt, startup ? 2300 : 250);
+  }
+  window.PasosSeguridad = { isHuella: huellaOn, setHuella: setHuella, lock: () => show(false) };
+  show(true);
+})();
+
+// ===== Sin selección / menú contextual de texto (salvo en campos editables) =====
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('selectstart', e => {
+  const t = e.target.nodeType === 1 ? e.target : e.target.parentElement;
+  if (!t || !t.closest('input, textarea, [contenteditable="true"]')) e.preventDefault();
+});
+document.addEventListener('dragstart', e => { if (e.target.tagName === 'IMG') e.preventDefault(); });
 </script>
 </body>
 </html>

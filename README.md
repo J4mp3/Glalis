@@ -1,43 +1,26 @@
-# Pasos Pay — Frontend
+# Gali — app demostrativa (portafolio)
 
-App mobile (web + Capacitor) que combina contador de pasos con medio de pago (tarjetas propias, pago con QR).
-Por ahora es **solo frontend**: todo es mock/estático, sin backend ni convenios conectados.
+App mobile (web/PWA) con estética de banca móvil. **Demostrativa y no válida**: todo es mock/estático, sin backend ni operaciones reales.
 
 ## Archivos
 
-- `index.html` — **el único archivo que importa**. Es autocontenido (CSS y JS incluidos adentro), con todas las pantallas (Inicio + placeholders de Tarjetas/QR/Transferencias/Más) en una sola página (SPA simple). Abrí este.
-- `styles.css` / `app.js` — quedaron de una versión anterior (separada en 3 archivos) y ya no los usa `index.html`. Los podés borrar cuando quieras, no hacen falta.
-- `package.json` / `capacitor.config.json` — scaffolding para empaquetar como APK más adelante con Capacitor.
+- `index.html` — la app completa (HTML + CSS + JS en un solo archivo).
+- `manifest.json`, `sw.js`, `icon-192.png`, `icon-512.png` — PWA (instalable y con caché offline).
+- `jsqr.js` — librería [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0) para detectar códigos QR con la cámara.
+- `ico/`, `img/` — íconos e imágenes (ya optimizados para celular).
 
-## Cómo probarla ahora
+## Publicar en GitHub Pages
 
-Abrí `index.html` directo en el navegador (doble clic, o clic derecho → Abrir con → Chrome/Edge/Firefox). Achicá la ventana a un ancho tipo celular (375–430px) o abrí las devtools en modo "responsive/mobile".
+1. Subí estos archivos a un repositorio de GitHub (rama `main`).
+2. En el repo: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)` → Save**.
+3. Esperá ~1 minuto. La app queda en `https://<usuario>.github.io/<repo>/`.
+4. En el celular abrí esa dirección con Chrome. Para instalarla como app: menú ⋮ → **Instalar aplicación / Agregar a pantalla de inicio**.
 
-## Cómo convertirla en APK más adelante
+Notas:
+- Hace falta HTTPS (GitHub Pages ya lo da) para la instalación, el caché offline y la cámara.
+- Al subir cambios, la app instalada toma la versión nueva al abrirla. Si cambiás íconos o imágenes con el mismo nombre, subí `CACHE_VERSION` en `sw.js`.
+- La vibración funciona en Chrome para Android (no en iPhone).
 
-Vas a necesitar Node.js y Android Studio instalados en tu compu (esto no se puede hacer desde este chat):
+## Probar en la compu
 
-1. `npm install`
-2. `npx cap init` (si hace falta, ya está precompletado en `capacitor.config.json`)
-3. `npx cap add android`
-4. `npx cap sync`
-5. `npx cap open android` → generás el APK desde Android Studio.
-
-## Estado actual
-
-- **Inicio**: réplica de la captura que mandaste (header naranja con degradé y blob decorativo, avatar/ojo/ayuda/notificaciones, pill de cuenta, saldo grande, alias con estrella, 4 accesos circulares, dots de carrusel, Accesos directos, banner promocional, Beneficios, Servicios y recargas, tarjeta "Pagá o agregá tus servicios", Recomendaciones, Cerrar sesión).
-- Todos los botones de esa pantalla son **tocables pero sin función** (a la espera de convenios), salvo el nav inferior que sí cambia de pantalla.
-- **Nav inferior**: Inicio / Tarjetas / botón central (QR, pago sin contacto) / Transferencias / Más — navegan a pantallas propias. Tarjetas, Transferencias y Más son placeholders vacíos hasta que me pases sus capturas.
-- El botón "Pagar sin contacto" de Accesos directos también lleva al tab QR, ya que es la función central de pago.
-- **Contador de pasos**: todavía no tengo la captura de esa pantalla — por ahora vive como placeholder dentro de "Más".
-
-## Notas de color / estética (por si querés ajustar a mano)
-
-- Naranja principal: `#FF5F00`, degradé hacia `#E64A00`.
-- Fondo general: `#F2F1F3`.
-- Tarjetas blancas con `border-radius: 16px` y sombra suave.
-- Las fotos/ilustraciones de Beneficios y Recomendaciones son placeholders con emoji + degradé de color — cuando me pases las imágenes reales las reemplazo.
-
-## Próximo paso
-
-Mandame las capturas de las demás pantallas (Tarjetas, Transferencias, Más, la pantalla del contador de pasos, y el flujo de pago/cobro con QR) y las voy clonando una por una, respetando esta misma estética.
+Abrí `index.html` en el navegador y achicá la ventana a ~400 px de ancho. Para probar la cámara y el caché offline hace falta servirla por `http://localhost` (por ejemplo `npx serve .`).
